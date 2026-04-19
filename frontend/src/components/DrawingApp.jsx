@@ -37,8 +37,15 @@ function DrawingApp({ onExit, toggleTheme, theme }) {
     
     if (gesture === 'draw') {
       clearTimeout(stopTimeoutRef.current);
+      
+      const resumingFromStop = isGestureStart && lastGestureAppRef.current === 'stop';
+      const actualIsStart = isGestureStart && !resumingFromStop;
+
       if (typeof canvasRef.current?.drawRemoteCoordinate === 'function') {
-        canvasRef.current.drawRemoteCoordinate(x, y, isGestureStart);
+        canvasRef.current.drawRemoteCoordinate(x, y, actualIsStart);
+      }
+      if (typeof canvasRef.current?.clearCursor === 'function') {
+        canvasRef.current.clearCursor();
       }
     } else {
       if (lastGestureAppRef.current === 'draw' && isGestureStart) {
@@ -48,6 +55,19 @@ function DrawingApp({ onExit, toggleTheme, theme }) {
             canvasRef.current.endRemoteStroke();
           }
         }, 80);
+      }
+      
+      if (gesture === 'stop') {
+        if (typeof canvasRef.current?.updatePausePosition === 'function') {
+          canvasRef.current.updatePausePosition(x, y);
+        }
+        if (typeof canvasRef.current?.drawCursor === 'function') {
+          canvasRef.current.drawCursor(x, y);
+        }
+      } else {
+        if (typeof canvasRef.current?.clearCursor === 'function') {
+          canvasRef.current.clearCursor();
+        }
       }
       
       // One-shot event trigger to prevent continuous re-erasing

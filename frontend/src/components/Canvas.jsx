@@ -3,6 +3,8 @@ import React, { useRef, useEffect, useImperativeHandle, forwardRef } from 'react
 const Canvas = forwardRef(({ color, brushSize, isEraser, onDrawStart, boardColor = '#1e293b' }, ref) => {
   const canvasRef = useRef(null);
   const contextRef = useRef(null);
+  const cursorCanvasRef = useRef(null);
+  const cursorContextRef = useRef(null);
   
   // High performance refs (avoiding useState)
   const isDrawing = useRef(false);
@@ -73,6 +75,15 @@ const Canvas = forwardRef(({ color, brushSize, isEraser, onDrawStart, boardColor
       
       contextRef.current = ctx;
       
+      const cursorCanvas = cursorCanvasRef.current;
+      if (cursorCanvas) {
+        cursorCanvas.width = rect.width * dpr;
+        cursorCanvas.height = rect.height * dpr;
+        const cCtx = cursorCanvas.getContext('2d');
+        cCtx.scale(dpr, dpr);
+        cursorContextRef.current = cCtx;
+      }
+      
       // Save initial state
       if (history.current.length === 0) {
         saveHistoryState();
@@ -109,6 +120,77 @@ const Canvas = forwardRef(({ color, brushSize, isEraser, onDrawStart, boardColor
 
   // Expose API to parent
   useImperativeHandle(ref, () => ({
+    drawCursor: (x, y) => {
+      const canvas = cursorCanvasRef.current;
+      const ctx = cursorContextRef.current;
+      if (!canvas || !ctx) return;
+      
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const drawX = x * rect.width;
+      const drawY = y * rect.height;
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      
+      // Calculate scaled size for arrow based on screen width
+      const s = Math.max(0.6, (rect.width / 1200) * 0.8);
+      
+      // Draw standard mouse arrow geometry (adjusted relative to cursor tip)
+      ctx.moveTo(drawX, drawY);
+      ctx.lineTo(drawX, drawY + 16 * s);
+      ctx.lineTo(drawX + 4 * s, drawY + 12 * s);
+      ctx.lineTo(drawX + 8 * s, drawY + 20 * s);
+      ctx.lineTo(drawX + 11 * s, drawY + 18.5 * s);
+      ctx.lineTo(drawX + 6.5 * s, drawY + 10.5 * s);
+      ctx.lineTo(drawX + 13 * s, drawY + 10 * s);
+      ctx.closePath();
+
+      // Subtle shadow for better visibility
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 4;
+
+      // Fill with subtle opacity
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.fill();
+
+      // Reset shadow before stroke
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+      
+      ctx.strokeStyle = '#1e293b'; // Clear distinction from typical drawing colors
+      ctx.lineWidth = Math.max(1, 1.5 * (s / 0.8));
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+    },
+    clearCursor: () => {
+      const canvas = cursorCanvasRef.current;
+      const ctx = cursorContextRef.current;
+      if (canvas && ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    },
+    updatePausePosition: (x, y) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const drawX = x * rect.width;
+      const drawY = y * rect.height;
+
+      if (!contextRef.current.remotePoints) {
+        contextRef.current.remotePoints = [{ x: drawX, y: drawY }];
+      } else {
+        const pts = contextRef.current.remotePoints;
+        pts.push({ x: drawX, y: drawY });
+        // Keep buffer small enough to maintain starting vector but avoid memory leak
+        if (pts.length > 5) {
+          pts.shift();
+        }
+      }
+    },
     clearCanvas: () => {
       const canvas = canvasRef.current;
       const ctx = contextRef.current;
@@ -279,18 +361,25 @@ const Canvas = forwardRef(({ color, brushSize, isEraser, onDrawStart, boardColor
   };
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="canvas-element"
-      style={{ backgroundColor: boardColor, transition: 'background-color 0.3s ease' }}
-      onMouseDown={startDrawing}
-      onMouseMove={draw}
-      onMouseUp={stopDrawing}
-      onMouseOut={stopDrawing}
-      onTouchStart={(e) => { e.preventDefault(); startDrawing(e); }}
-      onTouchMove={(e) => { e.preventDefault(); draw(e); }}
-      onTouchEnd={stopDrawing}
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        className="canvas-element"
+        style={{ backgroundColor: boardColor, transition: 'background-color 0.3s ease' }}
+        onMouseDown={startDrawing}
+        onMouseMove={draw}
+        onMouseUp={stopDrawing}
+        onMouseOut={stopDrawing}
+        onTouchStart={(e) => { e.preventDefault(); startDrawing(e); }}
+        onTouchMove={(e) => { e.preventDefault(); draw(e); }}
+        onTouchEnd={stopDrawing}
+      />
+      <canvas
+        ref={cursorCanvasRef}
+        className="canvas-element"
+        style={{ pointerEvents: 'none', position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+      />
+    </>
   );
 });
 

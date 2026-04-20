@@ -12,17 +12,12 @@ function DrawingApp({ onExit, toggleTheme, theme }) {
   const [isEraser, setIsEraser] = useState(false);
   const [status, setStatus] = useState('disconnected');
   const [isAirDrawing, setIsAirDrawing] = useState(false);
-  const [showNotify, setShowNotify] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   
   const canvasRef = useRef(null);
+  const colorPickerRef = useRef(null);
   const eraseStartTimeRef = useRef(null);
   const isCanvasClearedRef = useRef(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setShowNotify(false), 6000);
-    return () => clearTimeout(timer);
-  }, []);
   
   const isAirDrawingRef = useRef(isAirDrawing);
   useEffect(() => {
@@ -79,6 +74,11 @@ function DrawingApp({ onExit, toggleTheme, theme }) {
       }
     }
     
+    if (colorPickerRef.current?.handlePointerUpdate) {
+      // Allow selection only during 'stop' gesture (pause) for air coloring
+      colorPickerRef.current.handlePointerUpdate(x, y, gesture === 'stop');
+    }
+    
     lastGestureAppRef.current = gesture;
   }, []);
 
@@ -92,7 +92,6 @@ function DrawingApp({ onExit, toggleTheme, theme }) {
   }, [isReady, isActive]);
 
   const toggleVirtualMode = () => {
-    setShowNotify(false);
     setIsAirDrawing(!isAirDrawing);
   };
 
@@ -158,7 +157,7 @@ function DrawingApp({ onExit, toggleTheme, theme }) {
                {isAirDrawing ? <Hand size={18} /> : <MousePointer size={18} />}
            </button>
            
-           {((showNotify && !isAirDrawing) || isHovered) && (
+           {isHovered && (
              <div style={{
                position: 'absolute',
                top: '100%',
@@ -174,7 +173,6 @@ function DrawingApp({ onExit, toggleTheme, theme }) {
                whiteSpace: 'nowrap',
                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
                zIndex: 50,
-               animation: (showNotify && !isHovered) ? 'floatUpDown 2s infinite ease-in-out' : 'none'
              }}>
                {isAirDrawing ? 'Switch to Normal Mode ✨' : 'Switch to Virtual Mode ✨'}
                <div style={{
@@ -219,6 +217,7 @@ function DrawingApp({ onExit, toggleTheme, theme }) {
       </div>
 
       <Toolbar
+        colorPickerRef={colorPickerRef}
         color={color}
         setColor={setColor}
         brushSize={brushSize}

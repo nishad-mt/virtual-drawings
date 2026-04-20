@@ -190,19 +190,7 @@ function DrawingApp({ onExit, toggleTheme, theme }) {
       <StatusBar status={status} />
       
       {isAirDrawing && (
-        <div style={{
-          position: 'absolute',
-          bottom: '20px',
-          right: '20px',
-          width: '240px',
-          height: '180px',
-          borderRadius: '12px',
-          overflow: 'hidden',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-          border: '2px solid var(--accent-color)',
-          zIndex: 100,
-          backgroundColor: '#000'
-        }}>
+        <div className="webcam-preview">
           <video 
             id="video-preview" 
             ref={videoRef} 

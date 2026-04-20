@@ -1,16 +1,6 @@
 import React from 'react';
 import { Trash2, Eraser, Pen, Download, Undo, Redo, Circle } from 'lucide-react';
-
-const COLORS = [
-  '#f8fafc', // White
-  '#ef4444', // Red
-  '#f59e0b', // Amber
-  '#10b981', // Emerald
-  '#3b82f6', // Blue
-  '#8b5cf6', // Violet
-  '#ec4899', // Pink
-  '#0f172a', // Slate 900 (Black)
-];
+import ColorPicker from './ColorPicker';
 
 const BRUSH_SIZES = [
   { id: 'small', size: 2 },
@@ -19,6 +9,7 @@ const BRUSH_SIZES = [
 ];
 
 export default function Toolbar({ 
+  colorPickerRef,
   color, 
   setColor, 
   brushSize, 
@@ -34,18 +25,13 @@ export default function Toolbar({
     <div className="toolbar glass-panel">
       {/* Colors */}
       <div className="toolbar-section">
-        {COLORS.map((c) => (
-          <button
-            key={c}
-            className={`color-btn ${color === c && !isEraser ? 'active' : ''}`}
-            style={{ backgroundColor: c }}
-            onClick={() => {
-              setColor(c);
-              setIsEraser(false);
-            }}
-            aria-label={`Select color ${c}`}
-          />
-        ))}
+        <ColorPicker
+          ref={colorPickerRef}
+          color={color}
+          setColor={setColor}
+          isEraser={isEraser}
+          setIsEraser={setIsEraser}
+        />
       </div>
 
       <div className="divider" />

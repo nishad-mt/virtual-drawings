@@ -616,10 +616,32 @@ body {
   margin-top: auto;
 }
 
+/* Webcam Preview */
+.webcam-preview {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  width: 240px;
+  height: 180px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  border: 2px solid var(--accent-color);
+  z-index: 100;
+  background-color: #000;
+  transition: all 0.3s ease;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1024px) {
   .hero-section {
     padding-top: 140px;
+  }
+
+  .webcam-preview {
+    bottom: 140px;
+    width: 200px;
+    height: 150px;
   }
 }
 
@@ -673,13 +695,15 @@ body {
   .app-header-controls {
     top: 16px;
     left: 16px;
-    width: calc(100% - 32px);
+    width: auto;
+    max-width: calc(100% - 160px); /* Leave room for webcam */
     gap: 8px;
   }
 
   .status-bar {
     top: 72px; /* moved below header controls */
-    right: 16px;
+    left: 16px; /* Place on the left to leave top-right free */
+    right: auto;
     font-size: 0.75rem;
     padding: 6px 12px;
   }
@@ -713,6 +737,14 @@ body {
     width: 18px;
     height: 18px;
   }
+
+  .webcam-preview {
+    bottom: auto;
+    top: 16px;
+    right: 16px;
+    width: 130px;
+    height: 98px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -728,5 +760,12 @@ body {
   }
   .app-header-controls button.btn-icon:first-child {
     padding: 0 12px !important;
+  }
+
+  .webcam-preview {
+    top: 16px;
+    right: 16px;
+    width: 100px;
+    height: 75px;
   }
 }

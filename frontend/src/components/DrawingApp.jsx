@@ -12,16 +12,12 @@ function DrawingApp({ onExit, toggleTheme, theme }) {
   const [isEraser, setIsEraser] = useState(false);
   const [status, setStatus] = useState('disconnected');
   const [isAirDrawing, setIsAirDrawing] = useState(false);
-  const [showNotify, setShowNotify] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
   
   const canvasRef = useRef(null);
+  const colorPickerRef = useRef(null);
   const eraseStartTimeRef = useRef(null);
   const isCanvasClearedRef = useRef(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setShowNotify(false), 6000);
-    return () => clearTimeout(timer);
-  }, []);
   
   const isAirDrawingRef = useRef(isAirDrawing);
   useEffect(() => {
@@ -37,8 +33,15 @@ function DrawingApp({ onExit, toggleTheme, theme }) {
     
     if (gesture === 'draw') {
       clearTimeout(stopTimeoutRef.current);
+      
+      const resumingFromStop = isGestureStart && lastGestureAppRef.current === 'stop';
+      const actualIsStart = isGestureStart && !resumingFromStop;
+
       if (typeof canvasRef.current?.drawRemoteCoordinate === 'function') {
-        canvasRef.current.drawRemoteCoordinate(x, y, isGestureStart);
+        canvasRef.current.drawRemoteCoordinate(x, y, actualIsStart);
+      }
+      if (typeof canvasRef.current?.clearCursor === 'function') {
+        canvasRef.current.clearCursor();
       }
     } else {
       if (lastGestureAppRef.current === 'draw' && isGestureStart) {
@@ -50,12 +53,30 @@ function DrawingApp({ onExit, toggleTheme, theme }) {
         }, 80);
       }
       
+      if (gesture === 'stop') {
+        if (typeof canvasRef.current?.updatePausePosition === 'function') {
+          canvasRef.current.updatePausePosition(x, y);
+        }
+        if (typeof canvasRef.current?.drawCursor === 'function') {
+          canvasRef.current.drawCursor(x, y);
+        }
+      } else {
+        if (typeof canvasRef.current?.clearCursor === 'function') {
+          canvasRef.current.clearCursor();
+        }
+      }
+      
       // One-shot event trigger to prevent continuous re-erasing
       if (gesture === 'erase' && isGestureStart) {
         if (typeof canvasRef.current?.clearCanvas === 'function') {
           canvasRef.current.clearCanvas();
         }
       }
+    }
+    
+    if (colorPickerRef.current?.handlePointerUpdate) {
+      // Allow selection only during 'stop' gesture (pause) for air coloring
+      colorPickerRef.current.handlePointerUpdate(x, y, gesture === 'stop');
     }
     
     lastGestureAppRef.current = gesture;
@@ -71,7 +92,6 @@ function DrawingApp({ onExit, toggleTheme, theme }) {
   }, [isReady, isActive]);
 
   const toggleVirtualMode = () => {
-    setShowNotify(false);
     setIsAirDrawing(!isAirDrawing);
   };
 
@@ -122,17 +142,22 @@ function DrawingApp({ onExit, toggleTheme, theme }) {
          
          <div className="divider" style={{ backgroundColor: 'var(--glass-border)', margin: '4px 0' }} />
          
-         <div style={{ position: 'relative', display: 'flex' }}>
+         <div 
+           style={{ position: 'relative', display: 'flex' }}
+           onMouseEnter={() => setIsHovered(true)}
+           onMouseLeave={() => setIsHovered(false)}
+           onTouchStart={() => setIsHovered(true)}
+           onTouchEnd={() => setTimeout(() => setIsHovered(false), 2000)}
+         >
            <button 
              className={`btn-icon glass-panel ${isAirDrawing ? 'active' : ''}`}
              style={{ borderRadius: '20px' }} 
              onClick={toggleVirtualMode} 
-             title={isAirDrawing ? 'Switch to Normal Mode (Mouse)' : 'Switch to Air Drawing (Gestures)'}
            >
                {isAirDrawing ? <Hand size={18} /> : <MousePointer size={18} />}
            </button>
            
-           {showNotify && !isAirDrawing && (
+           {isHovered && (
              <div style={{
                position: 'absolute',
                top: '100%',
@@ -148,9 +173,8 @@ function DrawingApp({ onExit, toggleTheme, theme }) {
                whiteSpace: 'nowrap',
                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
                zIndex: 50,
-               animation: 'floatUpDown 2s infinite ease-in-out'
              }}>
-               Switch to Virtual Mode ✨
+               {isAirDrawing ? 'Switch to Normal Mode ✨' : 'Switch to Virtual Mode ✨'}
                <div style={{
                  position: 'absolute',
                  top: '-5px',
@@ -170,19 +194,7 @@ function DrawingApp({ onExit, toggleTheme, theme }) {
       <StatusBar status={status} />
       
       {isAirDrawing && (
-        <div style={{
-          position: 'absolute',
-          bottom: '20px',
-          right: '20px',
-          width: '240px',
-          height: '180px',
-          borderRadius: '12px',
-          overflow: 'hidden',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-          border: '2px solid var(--accent-color)',
-          zIndex: 100,
-          backgroundColor: '#000'
-        }}>
+        <div className="webcam-preview">
           <video 
             id="video-preview" 
             ref={videoRef} 
@@ -205,6 +217,7 @@ function DrawingApp({ onExit, toggleTheme, theme }) {
       </div>
 
       <Toolbar
+        colorPickerRef={colorPickerRef}
         color={color}
         setColor={setColor}
         brushSize={brushSize}

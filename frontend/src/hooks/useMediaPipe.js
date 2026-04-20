@@ -121,6 +121,11 @@ export function useMediaPipe(onGesture) {
         // Hands lost: maintain last known position cleanly safely
         finalX = prevX.current;
         finalY = prevY.current;
+        
+        // Ensure UI clears tracking state when hand goes off-screen
+        finalGesture = 'idle';
+        stableGestureRef.current = 'idle';
+        lastGestureRef.current = 'idle';
       }
 
       // Event trigger logic: track if a gesture is newly established

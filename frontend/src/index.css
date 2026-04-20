@@ -47,8 +47,7 @@ body {
   font-family: 'Inter', sans-serif;
   background-color: var(--bg-color);
   color: var(--text-primary);
-  overflow: hidden; /* Full screen web app feel */
-  touch-action: none; /* Prevent pinch zoom on touch devices */
+  overflow-x: hidden;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -122,10 +121,12 @@ body {
 /* Custom layout classes */
 .app-container {
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   position: relative;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  touch-action: none;
 }
 
 .app-header-controls {
@@ -716,6 +717,11 @@ body {
     flex-wrap: wrap; /* allow wrapping on small devices */
     justify-content: center;
     border-radius: 20px;
+  }
+
+  .toolbar-section {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .btn-icon {

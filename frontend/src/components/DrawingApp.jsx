@@ -13,6 +13,7 @@ function DrawingApp({ onExit, toggleTheme, theme }) {
   const [status, setStatus] = useState('disconnected');
   const [isAirDrawing, setIsAirDrawing] = useState(false);
   const [showNotify, setShowNotify] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
   
   const canvasRef = useRef(null);
   const eraseStartTimeRef = useRef(null);
@@ -142,17 +143,22 @@ function DrawingApp({ onExit, toggleTheme, theme }) {
          
          <div className="divider" style={{ backgroundColor: 'var(--glass-border)', margin: '4px 0' }} />
          
-         <div style={{ position: 'relative', display: 'flex' }}>
+         <div 
+           style={{ position: 'relative', display: 'flex' }}
+           onMouseEnter={() => setIsHovered(true)}
+           onMouseLeave={() => setIsHovered(false)}
+           onTouchStart={() => setIsHovered(true)}
+           onTouchEnd={() => setTimeout(() => setIsHovered(false), 2000)}
+         >
            <button 
              className={`btn-icon glass-panel ${isAirDrawing ? 'active' : ''}`}
              style={{ borderRadius: '20px' }} 
              onClick={toggleVirtualMode} 
-             title={isAirDrawing ? 'Switch to Normal Mode (Mouse)' : 'Switch to Air Drawing (Gestures)'}
            >
                {isAirDrawing ? <Hand size={18} /> : <MousePointer size={18} />}
            </button>
            
-           {showNotify && !isAirDrawing && (
+           {((showNotify && !isAirDrawing) || isHovered) && (
              <div style={{
                position: 'absolute',
                top: '100%',
@@ -168,9 +174,9 @@ function DrawingApp({ onExit, toggleTheme, theme }) {
                whiteSpace: 'nowrap',
                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
                zIndex: 50,
-               animation: 'floatUpDown 2s infinite ease-in-out'
+               animation: (showNotify && !isHovered) ? 'floatUpDown 2s infinite ease-in-out' : 'none'
              }}>
-               Switch to Virtual Mode ✨
+               {isAirDrawing ? 'Switch to Normal Mode ✨' : 'Switch to Virtual Mode ✨'}
                <div style={{
                  position: 'absolute',
                  top: '-5px',
